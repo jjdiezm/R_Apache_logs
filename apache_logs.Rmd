@@ -1,0 +1,75 @@
+---
+title: "Apache logs analysis"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      tidy.opts=list(width.cutoff=60))
+
+```
+```{r load_libraries, include=FALSE}
+library(knitr)
+library(stringr)
+if(!require(dplyr)){
+  install.packages('dplyr', repos='http://cran.us.r-project.org')
+  library(dplyr)
+}
+
+```
+
+Load file:
+```{r loaddata}
+logs <- read.csv("apache_logs.txt",stringsAsFactors = FALSE, header = F, sep= " ", quote = "\"")
+head(logs)
+str(logs)
+summary(logs)
+```
+
+In the file are two fields unused, and a data partial import, so we can just remove it from the DataSet:
+```{r data_format}
+logs = logs[,-c(2,3,5)]
+logs$V4<-substring(logs$V4,2)
+colnames(logs) = c("IP", "Date", "URL", "Status", "Size", "Referer", "User_Agent") 
+#Factors
+logs$IP <- as.factor(logs$IP)
+logs$URL <- as.factor(logs$URL)
+logs$Status <- as.factor(logs$Status)
+logs$Referer <- as.factor(logs$Referer)
+logs$User_Agent <- as.factor(logs$User_Agent)
+summary(logs)
+```
+
+```{r calculations}
+freq_logs <- table(logs$URL)
+print("Top 10 requested pages followed by number or requests ")
+print(sort(freq_logs, decreasing=TRUE)[1:10])
+
+print("Top ten responses")
+status <- table(logs$Status)
+print(sort(status, decreasing=TRUE))
+cat("\n\n")
+print("Percentatge of top ten responses")
+print(sort(round(100*prop.table(status), digits = 2), decreasing=TRUE))
+
+success <- c('200','206','301','304')
+failure <- c('403','404','416','500')
+logs_success<-logs[logs$Status %in% success,]
+logs_failure<-logs[logs$Status %in% failure,]
+
+cat("\nTotal successful requests: ", nrow(logs_success)/nrow(logs)*100,"% \n")
+cat("Total unsuccessful requests: ", nrow(logs_failure)/nrow(logs)*100,"% \n")
+
+freq_logs_un <- table(logs_failure$URL)
+print("Top 10 unsuccessful requested pages followed by number or requests ")
+print(sort(freq_logs_un, decreasing=TRUE)[1:10])
+cat("\n\n")
+freq_ip <- table(logs$IP)
+print("Top 10 IPs requesting followed by number or requests ")
+print(sort(freq_ip, decreasing=TRUE)[1:10])
+
+```
+
+
