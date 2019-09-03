@@ -1,0 +1,477 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{unicode=true,
+            pdftitle={Apache logs analysis},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\providecommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+
+  \title{Apache logs analysis}
+    \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+    \author{}
+    \preauthor{}\postauthor{}
+    \date{}
+    \predate{}\postdate{}
+  
+
+\begin{document}
+\maketitle
+
+Load file:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{logs <-}\StringTok{ }\KeywordTok{read.csv}\NormalTok{(}\StringTok{"apache_logs.txt"}\NormalTok{,}\DataTypeTok{stringsAsFactors =} \OtherTok{FALSE}\NormalTok{, }\DataTypeTok{header =}\NormalTok{ F, }\DataTypeTok{sep=} \StringTok{" "}\NormalTok{, }\DataTypeTok{quote =} \StringTok{"}\CharTok{\textbackslash{}"}\StringTok{"}\NormalTok{)}
+\KeywordTok{head}\NormalTok{(logs)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##             V1 V2 V3                    V4     V5
+## 1 83.149.9.216  -  - [17/May/2015:10:05:03 +0000]
+## 2 83.149.9.216  -  - [17/May/2015:10:05:43 +0000]
+## 3 83.149.9.216  -  - [17/May/2015:10:05:47 +0000]
+## 4 83.149.9.216  -  - [17/May/2015:10:05:12 +0000]
+## 5 83.149.9.216  -  - [17/May/2015:10:05:07 +0000]
+## 6 83.149.9.216  -  - [17/May/2015:10:05:34 +0000]
+##                                                                                   V6
+## 1      GET /presentations/logstash-monitorama-2013/images/kibana-search.png HTTP/1.1
+## 2  GET /presentations/logstash-monitorama-2013/images/kibana-dashboard3.png HTTP/1.1
+## 3 GET /presentations/logstash-monitorama-2013/plugin/highlight/highlight.js HTTP/1.1
+## 4        GET /presentations/logstash-monitorama-2013/plugin/zoom-js/zoom.js HTTP/1.1
+## 5         GET /presentations/logstash-monitorama-2013/plugin/notes/notes.js HTTP/1.1
+## 6          GET /presentations/logstash-monitorama-2013/images/sad-medic.png HTTP/1.1
+##    V7     V8
+## 1 200 203023
+## 2 200 171717
+## 3 200  26185
+## 4 200   7697
+## 5 200   2892
+## 6 200 430406
+##                                                                V9
+## 1 http://semicomplete.com/presentations/logstash-monitorama-2013/
+## 2 http://semicomplete.com/presentations/logstash-monitorama-2013/
+## 3 http://semicomplete.com/presentations/logstash-monitorama-2013/
+## 4 http://semicomplete.com/presentations/logstash-monitorama-2013/
+## 5 http://semicomplete.com/presentations/logstash-monitorama-2013/
+## 6 http://semicomplete.com/presentations/logstash-monitorama-2013/
+##                                                                                                                       V10
+## 1 Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.77 Safari/537.36
+## 2 Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.77 Safari/537.36
+## 3 Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.77 Safari/537.36
+## 4 Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.77 Safari/537.36
+## 5 Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.77 Safari/537.36
+## 6 Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.77 Safari/537.36
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{str}\NormalTok{(logs)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 'data.frame':    10000 obs. of  10 variables:
+##  $ V1 : chr  "83.149.9.216" "83.149.9.216" "83.149.9.216" "83.149.9.216" ...
+##  $ V2 : chr  "-" "-" "-" "-" ...
+##  $ V3 : chr  "-" "-" "-" "-" ...
+##  $ V4 : chr  "[17/May/2015:10:05:03" "[17/May/2015:10:05:43" "[17/May/2015:10:05:47" "[17/May/2015:10:05:12" ...
+##  $ V5 : chr  "+0000]" "+0000]" "+0000]" "+0000]" ...
+##  $ V6 : chr  "GET /presentations/logstash-monitorama-2013/images/kibana-search.png HTTP/1.1" "GET /presentations/logstash-monitorama-2013/images/kibana-dashboard3.png HTTP/1.1" "GET /presentations/logstash-monitorama-2013/plugin/highlight/highlight.js HTTP/1.1" "GET /presentations/logstash-monitorama-2013/plugin/zoom-js/zoom.js HTTP/1.1" ...
+##  $ V7 : int  200 200 200 200 200 200 200 200 200 200 ...
+##  $ V8 : chr  "203023" "171717" "26185" "7697" ...
+##  $ V9 : chr  "http://semicomplete.com/presentations/logstash-monitorama-2013/" "http://semicomplete.com/presentations/logstash-monitorama-2013/" "http://semicomplete.com/presentations/logstash-monitorama-2013/" "http://semicomplete.com/presentations/logstash-monitorama-2013/" ...
+##  $ V10: chr  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.77 Safari/537.36" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.77 Safari/537.36" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.77 Safari/537.36" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.77 Safari/537.36" ...
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{summary}\NormalTok{(logs)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##       V1                 V2                 V3           
+##  Length:10000       Length:10000       Length:10000      
+##  Class :character   Class :character   Class :character  
+##  Mode  :character   Mode  :character   Mode  :character  
+##                                                          
+##                                                          
+##                                                          
+##       V4                 V5                 V6                  V7       
+##  Length:10000       Length:10000       Length:10000       Min.   :200.0  
+##  Class :character   Class :character   Class :character   1st Qu.:200.0  
+##  Mode  :character   Mode  :character   Mode  :character   Median :200.0  
+##                                                           Mean   :210.8  
+##                                                           3rd Qu.:200.0  
+##                                                           Max.   :500.0  
+##       V8                 V9                V10           
+##  Length:10000       Length:10000       Length:10000      
+##  Class :character   Class :character   Class :character  
+##  Mode  :character   Mode  :character   Mode  :character  
+##                                                          
+##                                                          
+## 
+\end{verbatim}
+
+In the file are two fields unused, and a data partial import, so we can
+just remove it from the DataSet:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{logs =}\StringTok{ }\NormalTok{logs[,}\OperatorTok{-}\KeywordTok{c}\NormalTok{(}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{5}\NormalTok{)]}
+\NormalTok{logs}\OperatorTok{$}\NormalTok{V4<-}\KeywordTok{substring}\NormalTok{(logs}\OperatorTok{$}\NormalTok{V4,}\DecValTok{2}\NormalTok{)}
+\KeywordTok{colnames}\NormalTok{(logs) =}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"IP"}\NormalTok{, }\StringTok{"Date"}\NormalTok{, }\StringTok{"URL"}\NormalTok{, }\StringTok{"Status"}\NormalTok{, }\StringTok{"Size"}\NormalTok{, }\StringTok{"Referer"}\NormalTok{, }\StringTok{"User_Agent"}\NormalTok{) }
+\CommentTok{#Factors}
+\NormalTok{logs}\OperatorTok{$}\NormalTok{IP <-}\StringTok{ }\KeywordTok{as.factor}\NormalTok{(logs}\OperatorTok{$}\NormalTok{IP)}
+\NormalTok{logs}\OperatorTok{$}\NormalTok{URL <-}\StringTok{ }\KeywordTok{as.factor}\NormalTok{(logs}\OperatorTok{$}\NormalTok{URL)}
+\NormalTok{logs}\OperatorTok{$}\NormalTok{Status <-}\StringTok{ }\KeywordTok{as.factor}\NormalTok{(logs}\OperatorTok{$}\NormalTok{Status)}
+\NormalTok{logs}\OperatorTok{$}\NormalTok{Referer <-}\StringTok{ }\KeywordTok{as.factor}\NormalTok{(logs}\OperatorTok{$}\NormalTok{Referer)}
+\NormalTok{logs}\OperatorTok{$}\NormalTok{User_Agent <-}\StringTok{ }\KeywordTok{as.factor}\NormalTok{(logs}\OperatorTok{$}\NormalTok{User_Agent)}
+\KeywordTok{summary}\NormalTok{(logs)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##               IP           Date          
+##  66.249.73.135 : 482   Length:10000      
+##  46.105.14.53  : 364   Class :character  
+##  130.237.218.86: 357   Mode  :character  
+##  75.97.9.59    : 273                     
+##  50.16.19.13   : 113                     
+##  209.85.238.199: 102                     
+##  (Other)       :8309                     
+##                                         URL           Status    
+##  GET /favicon.ico HTTP/1.1                : 747   200    :9126  
+##  GET /style2.css HTTP/1.1                 : 531   304    : 445  
+##  GET /reset.css HTTP/1.1                  : 524   404    : 213  
+##  GET /images/jordan-80.png HTTP/1.1       : 521   301    : 164  
+##  GET /images/web/2009/banner.png HTTP/1.1 : 504   206    :  45  
+##  GET /blog/tags/puppet?flav=rss20 HTTP/1.1: 488   500    :   3  
+##  (Other)                                  :6685   (Other):   4  
+##      Size          
+##  Length:10000      
+##  Class :character  
+##  Mode  :character  
+##                    
+##                    
+##                    
+##                    
+##                                                             Referer    
+##  -                                                              :4073  
+##  http://semicomplete.com/presentations/logstash-puppetconf-2012/: 689  
+##  http://www.semicomplete.com/projects/xdotool/                  : 656  
+##  http://semicomplete.com/presentations/logstash-scale11x/       : 406  
+##  http://www.semicomplete.com/articles/dynamic-dns-with-dhcp/    : 335  
+##  http://www.semicomplete.com/                                   : 228  
+##  (Other)                                                        :3613  
+##                                                                                                                                                                                                 User_Agent  
+##  Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.107 Safari/537.36                                                                                       :1044  
+##  Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.91 Safari/537.36                                                                             : 369  
+##  UniversalFeedParser/4.2-pre-314-svn +http://feedparser.org/                                                                                                                                         : 364  
+##  Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0                                                                                                                            : 296  
+##  Mozilla/5.0 (iPhone; CPU iPhone OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25 (compatible; Googlebot/2.1; +http://www.google.com/bot.html): 271  
+##  Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.107 Safari/537.36                                                                                           : 268  
+##  (Other)                                                                                                                                                                                             :7388
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{freq_logs <-}\StringTok{ }\KeywordTok{table}\NormalTok{(logs}\OperatorTok{$}\NormalTok{URL)}
+\KeywordTok{print}\NormalTok{(}\StringTok{"Top 10 requested pages followed by number or requests "}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "Top 10 requested pages followed by number or requests "
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{print}\NormalTok{(}\KeywordTok{sort}\NormalTok{(freq_logs, }\DataTypeTok{decreasing=}\OtherTok{TRUE}\NormalTok{)[}\DecValTok{1}\OperatorTok{:}\DecValTok{10}\NormalTok{])}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+##                 GET /favicon.ico HTTP/1.1 
+##                                       747 
+##                  GET /style2.css HTTP/1.1 
+##                                       531 
+##                   GET /reset.css HTTP/1.1 
+##                                       524 
+##        GET /images/jordan-80.png HTTP/1.1 
+##                                       521 
+##  GET /images/web/2009/banner.png HTTP/1.1 
+##                                       504 
+## GET /blog/tags/puppet?flav=rss20 HTTP/1.1 
+##                                       488 
+##                 GET /?flav=rss20 HTTP/1.1 
+##                                       217 
+##           GET /projects/xdotool/ HTTP/1.1 
+##                                       208 
+##                  GET /robots.txt HTTP/1.1 
+##                                       157 
+##                            GET / HTTP/1.1 
+##                                       151
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{print}\NormalTok{(}\StringTok{"Top ten responses"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "Top ten responses"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{status <-}\StringTok{ }\KeywordTok{table}\NormalTok{(logs}\OperatorTok{$}\NormalTok{Status)}
+\KeywordTok{print}\NormalTok{(}\KeywordTok{sort}\NormalTok{(status, }\DataTypeTok{decreasing=}\OtherTok{TRUE}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+##  200  304  404  301  206  500  403  416 
+## 9126  445  213  164   45    3    2    2
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{cat}\NormalTok{(}\StringTok{"}\CharTok{\textbackslash{}n\textbackslash{}n}\StringTok{"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{print}\NormalTok{(}\StringTok{"Percentatge of top ten responses"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "Percentatge of top ten responses"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{print}\NormalTok{(}\KeywordTok{sort}\NormalTok{(}\KeywordTok{round}\NormalTok{(}\DecValTok{100}\OperatorTok{*}\KeywordTok{prop.table}\NormalTok{(status), }\DataTypeTok{digits =} \DecValTok{2}\NormalTok{), }\DataTypeTok{decreasing=}\OtherTok{TRUE}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+##   200   304   404   301   206   500   403   416 
+## 91.26  4.45  2.13  1.64  0.45  0.03  0.02  0.02
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{success <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{'200'}\NormalTok{,}\StringTok{'206'}\NormalTok{,}\StringTok{'301'}\NormalTok{,}\StringTok{'304'}\NormalTok{)}
+\NormalTok{failure <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{'403'}\NormalTok{,}\StringTok{'404'}\NormalTok{,}\StringTok{'416'}\NormalTok{,}\StringTok{'500'}\NormalTok{)}
+\NormalTok{logs_success<-logs[logs}\OperatorTok{$}\NormalTok{Status }\OperatorTok{%in%}\StringTok{ }\NormalTok{success,]}
+\NormalTok{logs_failure<-logs[logs}\OperatorTok{$}\NormalTok{Status }\OperatorTok{%in%}\StringTok{ }\NormalTok{failure,]}
+
+\KeywordTok{cat}\NormalTok{(}\StringTok{"}\CharTok{\textbackslash{}n}\StringTok{Total successful requests: "}\NormalTok{, }\KeywordTok{nrow}\NormalTok{(logs_success)}\OperatorTok{/}\KeywordTok{nrow}\NormalTok{(logs)}\OperatorTok{*}\DecValTok{100}\NormalTok{,}\StringTok{"% }\CharTok{\textbackslash{}n}\StringTok{"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Total successful requests:  97.8 %
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{cat}\NormalTok{(}\StringTok{"Total unsuccessful requests: "}\NormalTok{, }\KeywordTok{nrow}\NormalTok{(logs_failure)}\OperatorTok{/}\KeywordTok{nrow}\NormalTok{(logs)}\OperatorTok{*}\DecValTok{100}\NormalTok{,}\StringTok{"% }\CharTok{\textbackslash{}n}\StringTok{"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Total unsuccessful requests:  2.2 %
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{freq_logs_un <-}\StringTok{ }\KeywordTok{table}\NormalTok{(logs_failure}\OperatorTok{$}\NormalTok{URL)}
+\KeywordTok{print}\NormalTok{(}\StringTok{"Top 10 unsuccessful requested pages followed by number or requests "}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "Top 10 unsuccessful requested pages followed by number or requests "
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{print}\NormalTok{(}\KeywordTok{sort}\NormalTok{(freq_logs_un, }\DataTypeTok{decreasing=}\OtherTok{TRUE}\NormalTok{)[}\DecValTok{1}\OperatorTok{:}\DecValTok{10}\NormalTok{])}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+##                                         GET /files/logstash/logstash-1.3.2-monolithic.jar HTTP/1.1 
+##                                                                                                 61 
+## GET /presentations/logstash-puppetconf-2012/images/office-space-printer-beat-down-gif.gif HTTP/1.1 
+##                                                                                                 31 
+##                                                                       GET /blog/wp-admin/ HTTP/1.1 
+##                                                                                                  6 
+##                                                                            GET /wp-admin/ HTTP/1.1 
+##                                                                                                  6 
+##                                                         GET /wp-login.php?action=register HTTP/1.0 
+##                                                                                                  6 
+##                                                                         GET /wp/wp-admin/ HTTP/1.1 
+##                                                                                                  6 
+##                                                                  GET /wordpress/wp-admin/ HTTP/1.1 
+##                                                                                                  5 
+##                                                                            GET /admin.php HTTP/1.1 
+##                                                                                                  4 
+##                                                                       GET /administrator/ HTTP/1.1 
+##                                                                                                  4 
+##                                                                   GET /image/logstash.png HTTP/1.1 
+##                                                                                                  4
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{cat}\NormalTok{(}\StringTok{"}\CharTok{\textbackslash{}n\textbackslash{}n}\StringTok{"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{freq_ip <-}\StringTok{ }\KeywordTok{table}\NormalTok{(logs}\OperatorTok{$}\NormalTok{IP)}
+\KeywordTok{print}\NormalTok{(}\StringTok{"Top 10 IPs requesting followed by number or requests "}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "Top 10 IPs requesting followed by number or requests "
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{print}\NormalTok{(}\KeywordTok{sort}\NormalTok{(freq_ip, }\DataTypeTok{decreasing=}\OtherTok{TRUE}\NormalTok{)[}\DecValTok{1}\OperatorTok{:}\DecValTok{10}\NormalTok{])}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+##  66.249.73.135   46.105.14.53 130.237.218.86     75.97.9.59    50.16.19.13 
+##            482            364            357            273            113 
+## 209.85.238.199 68.180.224.225  100.43.83.137 208.115.111.72 198.46.149.143 
+##            102             99             84             83             82
+\end{verbatim}
+
+
+\end{document}
